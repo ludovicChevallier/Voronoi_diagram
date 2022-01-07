@@ -12,11 +12,13 @@ class Arc:
     sright=None
     arcleft=None
     arcright=None
-    def __init__(self,sleft=None,sright=None,arcleft=None,arcright=None):
+    parent=None
+    def __init__(self,sleft=None,sright=None,arcleft=None,arcright=None,parent=None):
         self.sleft=sleft
         self.sright=sright
         self.arcleft=arcleft
         self.arcright=arcright
+        self.parent=parent
 
 class Segment:
     start=None
