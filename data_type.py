@@ -1,11 +1,3 @@
-class Sites:
-    x=0.0
-    y=0.0
-    event=""
-    def __init__(self,x,y,event) :
-        self.x=x
-        self.y=y
-        self.event=event
 #this is our Binary tree containing the 2 arcs that intersect 
 class Arc:
     sleft=None
@@ -19,7 +11,16 @@ class Arc:
         self.arcleft=arcleft
         self.arcright=arcright
         self.parent=parent
-
+class Sites:
+    x=0.0
+    y=0.0
+    event=""
+    arc=[]
+    def __init__(self,x,y,event,arc=None) :
+        self.x=x
+        self.y=y
+        self.event=event
+        self.arc=arc
 class Segment:
     start=None
     end=None
