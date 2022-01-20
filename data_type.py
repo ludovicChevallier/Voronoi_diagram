@@ -24,6 +24,15 @@ class Sites:
 class Segment:
     start=None
     end=None
-    def __init__(self,s):
+    arc=None
+    def __init__(self,s,arc):
         self.start=s
         self.end=None
+        self.arc=arc
+class Point:
+    x=0.0
+    y=0.0
+    def __init__(self,x,y):
+        self.x=x
+        self.y=y
+

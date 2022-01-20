@@ -1,7 +1,6 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
-from data_type import Sites,Arc,Segment
+from data_type import Sites,Arc,Segment,Point
 #All the points will already be of class points with events ="sites"
 def Voronoi(points):
     #sort the points descending by y coordinates
@@ -9,22 +8,72 @@ def Voronoi(points):
     Binary_Tree=Arc()
     def myFunc(e):
         return e.y
+    list_point=[]
     points.sort(key=myFunc,reverse=True)
-
     while len(points)!=0:
         point=points.pop(0)
         if(point.event=="site"):
-            site_events(point,Binary_Tree)
+            list_point.append(point)
+            list_circle=site_events(point,Binary_Tree,segment)          
+            if(list_circle!=None):
+                index=0
+                for i in range(len(list_circle)):
+                    for j in range(len(points)):
+                        if(list_circle[i].y>points[j].y):
+                            index=j
+                    if(j!=0):
+                        points.insert(j-1,list_circle[i])
+                    else:
+                        point=points[0]
+                        points[0]=list_circle[i]
+                        points.insert(0,point)
         else:
-            circle_events(point)
+            Binary_Tree=circle_events(point,segment,Binary_Tree)
+    #We need to close the segments
+    list_seg_x=[]
+    list_seg_y=[]
+    for seg in segment:
+        if(seg.end==None):
+            #find 2 points that intersect the segment
+            s1,s2=intersection(Point(seg.arc.sleft.x,seg.arc.sleft.y),Point(seg.arc.sright.x,seg.arc.sright.y),0)
+            #find the constant a and b to compute ax+b
+            a=(s1.y-s2.y)/(s1.x-s2.x)
+            b=s1.y-a*s1.x
+            seg.start=Point(0,b)
+            print(b,a*50+b)
+            seg.end=Point(50,a*50+b)
+        list_seg_x.append([seg.start.x,seg.end.x])
+        list_seg_y.append([seg.start.y,seg.end.y])
+    x=[]
+    y=[]
+    plt.figure() 
+    for point in list_point:
+        x.append(point.x)
+        y.append(point.y)
+    #plot the points 
+    plt.xlim([0, 50])
+    plt.ylim([0, 50])
+    for i in range(len(x)):
+        plt.plot(x[i],y[i],'o', color='black')
+    for i in range(len(list_seg_x)):
+        plt.plot(list_seg_x[i],list_seg_y[i])
+    plt.show()
+
+        
+    
+
+
+            
+
 #TODO ADD the Circle event and the return of segment
-def site_events(point,Binary_Tree):
+def site_events(point,Binary_Tree,segment):
     if(Binary_Tree.sleft==None and Binary_Tree.sright==None):
         #When we create a node we need also to a child node
         Binary_Tree.sleft=point
         Binary_Tree.arcleft=Arc(None,point)
+        return None
     elif(Binary_Tree.sleft!=None and Binary_Tree.sright==None):
-        s1,s2=intersection(Binary_Tree.sleft,point)
+        s1,s2=intersection(Binary_Tree.sleft,point,float(point.y-0.00001))
         #in case of one intersection
         if(s2==None):
             if(Binary_Tree.sleft.x>point.x):
@@ -39,16 +88,19 @@ def site_events(point,Binary_Tree):
             else:
                 Binary_Tree.sright=point
                 Binary_Tree.arcright=Arc(point,None,parent=Binary_Tree)
-            detect_circle_event(Binary_Tree,Binary_Tree.sleft)
+            segment.append(Segment(s1,Binary_Tree))
+            return detect_circle_event(Binary_Tree,Binary_Tree.sleft)
         else:
             #In case the new point has 2 intersection with an other point we complete the node and add a new one
             Binary_Tree.sright=point
             Binary_Tree.arcright=Arc(point,Binary_Tree.sleft,parent=Binary_Tree)
             Binary_Tree.arcright.arcleft=Arc(None,point,parent=Binary_Tree.arcright)
             Binary_Tree.arcright.arcright=Arc(Binary_Tree.sleft,None,parent=Binary_Tree.arcright)
-            detect_circle_event(Binary_Tree,Binary_Tree.sleft,Binary_Tree.sleft)
+            segment.append(Segment(s1,Binary_Tree))
+            segment.append(Segment(s2,Binary_Tree.arcright))
+            return detect_circle_event(Binary_Tree,Binary_Tree.sleft,Binary_Tree.sleft)
     elif(Binary_Tree.sleft==None and Binary_Tree.sright!=None):
-        s1,s2=intersection(Binary_Tree.sright,point)
+        s1,s2=intersection(Binary_Tree.sright,point,float(point.y-0.00001))
         if(s2==None):
             if(Binary_Tree.sright.x<point.x):
                 Binary_Tree.sleft=Binary_Tree.sright
@@ -61,7 +113,8 @@ def site_events(point,Binary_Tree):
             else:
                 Binary_Tree.sleft=point
                 Binary_Tree.arcleft=Arc(None,point,parent=Binary_Tree)
-            detect_circle_event(Binary_Tree,None,Binary_Tree.sright)
+            segment.append(Segment(s1,Binary_Tree))
+            return detect_circle_event(Binary_Tree,None,Binary_Tree.sright)
         else:
             #In case the new point has 2 intersection with an other point we complete the node and add a new one
             Binary_Tree.sleft=point
@@ -69,7 +122,9 @@ def site_events(point,Binary_Tree):
             Binary_Tree.arcleft.arcright=Arc(point,None,parent=Binary_Tree.arcleft)
             Binary_Tree.arcleft.arcleft=Arc(None,Binary_Tree.sright,parent=Binary_Tree.arcleft)
             #Will try to find circle event on the left and right side f the point
-            detect_circle_event(Binary_Tree,Binary_Tree.sright,Binary_Tree.sright)
+            segment.append(Segment(s1,Binary_Tree))
+            segment.append(Segment(s2,Binary_Tree.arcleft))
+            return detect_circle_event(Binary_Tree,Binary_Tree.sright,Binary_Tree.sright)
     elif(Binary_Tree.sleft!=None and Binary_Tree.sright!=None):
         if(Binary_Tree.sleft.x>point.x):
             site_events(point,Binary_Tree.arcleft)
@@ -77,8 +132,8 @@ def site_events(point,Binary_Tree):
             site_events(point,Binary_Tree.arcright)
         else:
             #peut être réduire l?
-            s1,s2=intersection(Binary_Tree.sright,point,point.y-1)
-            s3,s4=intersection(Binary_Tree.sleft,point,point.y-1)
+            s1,s2=intersection(Binary_Tree.sright,point,float(point.y-0.00001))
+            s3,s4=intersection(Binary_Tree.sleft,point,float(point.y-0.00001))
             #worst case possible : we have a point between 2 other points an need to modify the decision tree
             #if the new point intersect the 2 sites
             #ATTENTION CEUX CAS PEU ETRE FAUX CAR UN NOUVEAU POINT NE PEUX CROISER DEUX DES LE DEBUT
@@ -91,6 +146,8 @@ def site_events(point,Binary_Tree):
                     Binary_Tree.arcright.sleft=point
                     Binary_Tree.arcright.arcright=Arc(old_point,None,parent=Binary_Tree.arcright)
                     Binary_Tree.arcright.arcleft=Arc(None,point,parent=Binary_Tree.arcright)
+                    segment.append(Segment(s1,Binary_Tree.arcright))
+                    segment.append(Segment(s3,Binary_Tree))
                 elif(Binary_Tree.arcleft.sleft==None):
                     old_point=Binary_Tree.sleft
                     Binary_Tree.sleft=point
@@ -98,13 +155,15 @@ def site_events(point,Binary_Tree):
                     Binary_Tree.arcleft.sright=point
                     Binary_Tree.arcleft.arcleft=Arc(None,old_point,parent=Binary_Tree.arcleft)
                     Binary_Tree.arcleft.arcleft=Arc(point,None,parent=Binary_Tree.arcleft)
+                    segment.append(Segment(s1,Binary_Tree))
+                    segment.append(Segment(s3,Binary_Tree.arcleft))
                 else:
                     #most complex cases : the point is in the middle of the three
                     old_point=Binary_Tree.sright
                     Binary_Tree.sright=point
+                    arcleft=Binary_Tree
                     a=False
                     RTree=Binary_Tree
-                    LTree=Binary_Tree
                     while(a==False):
                         if(RTree.arcright!=None):    
                             RTree=RTree.arcright
@@ -119,8 +178,13 @@ def site_events(point,Binary_Tree):
                     while(RTree.parent!=None):
                         RTree=RTree.parent
                     Binary_Tree=RTree
+                segment.append(Segment(s1,arcleft.arcright))
+                segment.append(Segment(s3,arcleft))
                 c1,c2=detect_circle_event(Binary_Tree,Binary_Tree.sleft,Binary_Tree.sright,point)
-                return compute_circle(Binary_Tree.sleft,Binary_Tree.sright,point),c1,c2
+                list_circle=compute_circle(Binary_Tree.sleft,Binary_Tree.sright,point)
+                list_circle.append(c1)
+                list_circle.append(c2)
+                return list_circle
             elif(s1!=None):
                 #if the point intersect only one site
                 arcleft=Binary_Tree.arcleft
@@ -131,16 +195,22 @@ def site_events(point,Binary_Tree):
                 arcleft.parent=Binary_Tree.arcleft.arcleft
                 Binary_Tree.arcleft.arcleft.arcleft=arcleft
                 Binary_Tree.arcleft.arcleft.arcright=Arc(Binary_Tree.arcleft.arcleft.sright,None,parent=Binary_Tree.arcleft.arcleft)
-                detect_circle_event(Binary_Tree,None,Binary_Tree.sright)
+                #<p3,p2>--><p2,p3>
+                segment.append(Segment(s1,Binary_Tree.arcleft))
+                segment.append(Segment(s2,Binary_Tree))
+                return detect_circle_event(Binary_Tree,None,Binary_Tree.sright)
             elif(s3!=None):
-                arcleft=Binary_Tree.arcleft
-                Binary_Tree.arcleft=Arc(point,Binary_Tree.sleft,parent=Binary_Tree)
-                Binary_Tree.arcleft.arcright=Arc(Binary_Tree.sleft,None,parent=Binary_Tree.arcleft)
-                Binary_Tree.arcleft.arcleft=Arc(arcleft.sright, Binary_Tree.arcleft.sleft,parent=Binary_Tree.arcleft)
-                Binary_Tree.arcleft.arcright=Arc(point,None,parent=Binary_Tree.arcleft)
-                arcleft.parent=Binary_Tree.arcleft.arcleft
-                Binary_Tree.arcleft.arcleft.arcleft=arcleft
-                detect_circle_event(Binary_Tree,Binary_Tree.sleft)
+                arcright=Binary_Tree.arcright
+                Binary_Tree.sright=point
+                Binary_Tree.arcright=Arc(point,Binary_Tree.sleft,parent=Binary_Tree)
+                Binary_Tree.arcright.arcleft=Arc(None,point,parent=Binary_Tree.arcright)
+                Binary_Tree.arcright.arcright=Arc( Binary_Tree.arcright.sright,arcright.sleft,parent=Binary_Tree.arcright)
+                arcright.parent=Binary_Tree.arcright.arcright
+                Binary_Tree.arcright.arcright.arcright=arcright
+                #<p1,p2>--><p2,p1>
+                segment.append(Segment(s3,Binary_Tree))
+                segment.append(Segment(s4,Binary_Tree.arcright))
+                return detect_circle_event(Binary_Tree,Binary_Tree.sleft)
 
 
                     
@@ -152,29 +222,34 @@ def intersection(p0,p1,l):
         py=(p0.y +p1.y)/2.0
     else:
         #use quadratic formula
+        #https://math.stackexchange.com/questions/2700033/explanation-of-method-for-finding-the-intersection-of-two-parabolas
+        #https://math.stackexchange.com/questions/1370231/parabola-equation-in-fortune-algorithm-for-building-voronoi-diagram
         # we just have to compute a b and c which are the value of the parabola ax²+bx+c and use them in the formula
         #a0,b0 and c0 are the parameters of the parabola for the point p0 (look at the lessons)
-        a0=0.5*1/(p0.x-l)
-        b0=0.5*1/(p0.x-l)*(-2)*p0.x
-        c0=(p0.x**2)*(p0.y**2)*(l**2)
-        a1=0.5*1/(p1.x-l)
-        b1=0.5*1/(p1.x-l)*(-2)*p1.x
-        c1=(p1.x**2)*(p1.y**2)*(l**2)
+        a0=0.5*1/(p0.y-l)
+        b0=(-2)*p0.x*0.5*1/(p0.y-l)
+        c0=((p0.x**2)+(p0.y**2)-(l**2))*0.5*1/(p0.y-l)
+        a1=1/(2*(p1.y-l))
+        b1=(-2)*p1.x*0.5*1/(p1.y-l)
+        c1=((p1.x**2)+(p1.y**2)-(l**2))*0.5*1/(p1.y-l)
         a=a1-a0
         b=b1-b0
         c=c1-c0
         #compute the 2 possibl intersections
-        x1=(-b-((b**2)-4*a*c)**0.5)/2*a
-        x2=(-b+((b**2)-4*a*c)**0.5)/2*a
+        x1=((-1*b)-((b**2)-4*a*c)**0.5)/(2*a)
+        x2=((-1*b)+((b**2)-4*a*c)**0.5)/(2*a)
+        print(x1,x2)
         #compute the y intersection
-        if(x1!=x2):
-            y1=a*x1**2+b*x1+c
-            y2=a*x2**2+b*x1+c
+        #The thing is that it's not possible for x1 and x2 to be equal but they would be very close for example :29.9797595392213 30.020256460778693
+        if(x1-x2>1.0 or x2-x1>1.0):
+            y1=a1*x1**2+b1*x1+c1
+            y2=a1*x2**2+b1*x2+c1
+            
             # if i have 2 intersection between 2 points it means that i have a circle event
-            return Segment(Sites(x1,y1)),Segment(Sites(x2,y2))
+            return Point(x1,y1),Point(x2,y2)
         else:
-            y1=a*x1**2+b*x1+c
-            return Segment(Sites(x1,y1)), None
+            y1=a1*x1**2+b1*x1+c1
+            return Point(x1,y1), None
 
 
 
@@ -190,7 +265,7 @@ def compute_circle(p1,p2,p3,arc):
     #compute the radius of the circle
     r=((B**2+C**2-4*A*D)/(2*A**2))**0.5
     c1=Sites(x,y-r,"circle",arc)
-    return c1
+    return [c1]
 def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
     # we have an intersection on the right side of the point and we are going to see if there is a risk a disapearing
     if(pleft!=None and pright==None and pmiddle==None):
@@ -203,7 +278,8 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
                 Tree=Tree.arcleft
             elif(Tree.sright.x<pleft.x):
                 Tree=Tree.arcright
-            elif(Tree.sright.x==pleft.x):
+            elif(Tree.sright.x==pleft.x and Tree.arcright.sright !=None):
+                
                 a==True
                 arc1=Tree
                 if(Tree.arcright.sleft.x==pleft.x):
@@ -211,7 +287,7 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
                 else:
                     arc2=Tree.parent
             else:
-                a==True
+                a=True
         if(arc1==None):
             return None
         else:
@@ -247,4 +323,71 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
         #In the case where the new point has an intersection with 2 points we need to check for the left and right point
         c1=detect_circle_event(Binary_Tree,pleft)
         c2=detect_circle_event(Binary_Tree,None,pright)
-        return c1,c2
+        return [c1[0],c2[0]]
+
+def circle_events(point,segments,Binary_Tree):
+    arcs=point.arc
+    #First we finish the segment that are linked to this circle events
+    #We have two things to do : delete the arc from the Binary tree and for the segment, add the end point
+    for arc in point.arc:
+        for segment in segments:
+            if(segment.arc==arc):
+                segment.end=Point(point.x,point.y)
+    #for the case of deleting in a binary tree we have 2 cases : first one the point is intersectd by 2 other points or the point is intersect by only one
+    arc= point.arc[0]
+    arc2=point.arc[1]
+    a=False
+    Tree=Binary_Tree
+    new_arc=None
+    while(a==False):
+        if(point.arc.x<Tree.sleft.x):
+            Tree=Tree.sleft
+        elif(point.arc.x>Tree.sright.x):
+            Tree=Tree.sright
+        else:
+            Tree_parent=Tree.parent
+            next_arc=Tree.arcright
+            #<p1,p2>--><p2,p3>
+            if(Tree.slfet!=next_arc.sright):
+                Tree.sright=next_arc.sright
+                Tree.arcright=next_arc.arcright
+                Tree.arcright.parent=next_arc
+                new_arc=Tree
+            else:
+                #In the case of the point intersecting an other one we techniqually have two circle event one for each intersection so we have to check if delete the left arc or right arc
+                if(Tree.arcright==arc2):
+                    #<p1,p2>--><p2,p1>--><p1,p3>--><p3,None>
+                    #<p1,p2>--><p2,p3>--><p3,None>
+                    Tree.arcright.sright=next_arc.arcright.sleft
+                    Tree.arcright.arcright=next_arc.arcright.arcright
+                    Tree.arcright.arcright.arcright.parent=next_arc.arcright
+                    new_arc=Tree.arcright
+                else:
+                    #<p4,p1><--<p1,p2>--><p2,p1>
+                    #<p4,p2>--><p2,p1>
+                    Tree.arcleft.sright=Tree.sright
+                    Tree.arcleft.arcright=Tree.arcright
+                    Tree.arcright.parent=Tree.arcleft
+                    new_arc=Tree.arcleft
+    segment.append(Point(point.x,point.y),new_arc)
+    return Tree
+
+
+#p1=Sites(10.0,45.0,"site")
+#p2=Sites(30.0,20.0,"site")
+p1=Sites(10.0,20.0,"site")
+p2=Sites(30.0,19.5,"site")
+points=[p1,p2]
+Voronoi(points)
+
+
+
+
+                
+
+            
+            
+        
+
+
+
