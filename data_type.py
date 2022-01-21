@@ -25,9 +25,9 @@ class Segment:
     start=None
     end=None
     arc=None
-    def __init__(self,s,arc):
+    def __init__(self,s,arc,end=None):
         self.start=s
-        self.end=None
+        self.end=end
         self.arc=arc
 class Point:
     x=0.0
