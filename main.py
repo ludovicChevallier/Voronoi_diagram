@@ -45,23 +45,10 @@ def Voronoi(points):
     list_seg_y=[]
     for i in range(len(segment)):
         print(segment[i].arc.sleft.x,segment[i].arc.sright.x)
-        print(segment[i].start.x,segment[i].start.y)
         #find 2 points that intersect the segment
         s1,s2=intersection(Point(segment[i].arc.sleft.x,segment[i].arc.sleft.y),Point(segment[i].arc.sright.x,segment[i].arc.sright.y),0)
-        #In case we have the same y
-        # if(s1.x!=500*s2.x):
-            # print("x!=x")
-        #find the constant a and b to compute ax+b
         a=(s1.y-s2.y)/(s1.x-s2.x)
         b=s1.y-a*s1.x
-        print(a,b)
-        # else:
-        #     print("x=x")
-        #     b=(segment[i].arc.sleft.x+segment[i].arc.sright.x)/2
-        #     a=0
-        #segment[i].start=Point(0,b)
-        #segment[i].end=Point(50,a*50+b)
-
         if(len(segment)>1 and segment[i].end==None):
             print("segment==2")
             seg=None
@@ -107,7 +94,7 @@ def Voronoi(points):
                 segment[i].end=Point(0,b)
                 segment[i].start=Point(50,a*50+b)
         else:
-            if(i<len(segment) and segment[i].end.x==segment[i+1].start.x or i!=0 and segment[i].end.x==segment[i-1].end.x or i<len(segment) and segment[i].end.x==segment[i+1].end.x):
+            if(i<len(segment) and segment[i].end.x==segment[i+1].start.x or i!=0 and segment[i-1].end!=None and segment[i].end.x==segment[i-1].end.x or i<len(segment) and segment[i+1].end!=None and segment[i].end.x==segment[i+1].end.x):
                 if(a<0):
                     print("1j")
                     segment[i].start=Point(0,b)
@@ -118,6 +105,8 @@ def Voronoi(points):
                     else:
                         print("upper")
                         segment[i].start=Point(b,0)
+                elif(segment[i-1].end!=None and segment[i].start.x==segment[i-1].start.x):
+                    print("ok")
                 else:
                     print("2j")
                     segment[i].start=Point(50,a*50+b)
@@ -601,9 +590,13 @@ def circle_events(point,segments,Binary_Tree):
 #p1=Sites(30.0,45.0,"site")
 #p2=Sites(10.0,20.0,"site")
 #Need to fix y=y
+# p1=Sites(10.0,19.0,"site")
+# p2=Sites(20.0,40.0,"site")
+# p3=Sites(30.0,20.0,"site")
+# p4=Sites(40.0,39.0,"site")
 p1=Sites(10.0,20.0,"site")
 p2=Sites(20.0,10.0,"site")
-p3=Sites(30.0,21.0,"site")
+p3=Sites(40.0,20.0,"site")
 p4=Sites(40.0,39.0,"site")
 points=[p1,p2,p3]
 Voronoi(points)
