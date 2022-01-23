@@ -16,11 +16,12 @@ class Sites:
     y=0.0
     event=""
     arc=[]
-    def __init__(self,x,y,event,arc=None) :
+    def __init__(self,x,y,event,arc=None,r=None) :
         self.x=x
         self.y=y
         self.event=event
         self.arc=arc
+        self.r=r
 class Segment:
     start=None
     end=None

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from data_type import Sites,Arc,Segment,Point
 import cmath
 import copy
+import operator
 #All the points will already be of class points with events ="sites"
 def Voronoi(points):
     #sort the points descending by y coordinates
@@ -10,8 +11,10 @@ def Voronoi(points):
     Binary_Tree=Arc()
     def myFunc(e):
         return e.y
+    def myFunc2(e):
+        return e.x
     list_point=[]
-    points.sort(key=myFunc,reverse=True)
+    points.sort(key=operator.attrgetter('y','x'),reverse=True)
     while len(points)!=0:
         list_circle=[]
         point=points.pop(0)
@@ -44,11 +47,16 @@ def Voronoi(points):
     list_seg_x=[]
     list_seg_y=[]
     for i in range(len(segment)):
+        print("arc")
         print(segment[i].arc.sleft.x,segment[i].arc.sright.x)
         #find 2 points that intersect the segment
         s1,s2=intersection(Point(segment[i].arc.sleft.x,segment[i].arc.sleft.y),Point(segment[i].arc.sright.x,segment[i].arc.sright.y),0)
-        a=(s1.y-s2.y)/(s1.x-s2.x)
-        b=s1.y-a*s1.x
+        if(s2!=None):
+            a=(s1.y-s2.y)/(s1.x-s2.x)
+            b=s1.y-a*s1.x
+        else:
+            a=0
+            b=s1.x
         if(len(segment)>1 and segment[i].end==None):
             print("segment==2")
             seg=None
@@ -56,31 +64,34 @@ def Voronoi(points):
             #If all the segment doesn't have an end it means that all of them are independent
             for j in range(len(segment)):
                 if(j!=i and segment[j].end!=None and segment[i].start.x==segment[j].end.x and segment[i].start.y==segment[j].end.y):
-                    seg=segment[i-j]
+                    seg=segment[j]
             if(seg!=None):
                 print("not else")
                 y=cmath.sqrt((segment[i].start.x.real)**2+(segment[i].start.x.imag)**2)
-                if(a<0  and y.real<seg.start.y):
-                    print(y.real,seg.start.y)
+                if(a<0  and segment[i].start.y<seg.start.y):
                     print("1")
                     segment[i].end=Point(50,a*50+b)
-                elif(a>0  and y.real<seg.start.y):
-                    print(y.real,seg.start.y)
+                elif(a>0  and segment[i].start.y<seg.start.y):
                     print("2")
                     segment[i].end=Point(0,b)
-                elif(a>0  and y.real>seg.start.y):
-                    print(y.real,seg.start.y)
+                elif(a>0  and segment[i].start.y>seg.start.y):
                     print("3")
                     segment[i].end=Point(50,a*50+b)
+                elif(a<0 and segment[i].start.y<seg.start.y ):
+                    print("4")
+                    segment[i].end=Point(0,b)
                 elif(a==0):
-                    if(y.real<seg.start.y):
+                    if(segment[i].start.y==seg.end.y):
+                        print(segment[i].start.y)
+                        print("------")
+                        print(seg.end.y)
                         print("under")
                         segment[i].end=Point(b,0)
                     else:
                         print("upper")
                         segment[i].end=Point(b,50)
                 else:
-                    print("4")
+                    print("5")
                     segment[i].end=Point(0,b)
             else:
                 print("else")
@@ -94,22 +105,42 @@ def Voronoi(points):
                 segment[i].end=Point(0,b)
                 segment[i].start=Point(50,a*50+b)
         else:
-            if(i<len(segment) and segment[i].end.x==segment[i+1].start.x or i!=0 and segment[i-1].end!=None and segment[i].end.x==segment[i-1].end.x or i<len(segment) and segment[i+1].end!=None and segment[i].end.x==segment[i+1].end.x):
-                if(a<0):
-                    print("1j")
-                    segment[i].start=Point(0,b)
-                elif(a==0):
-                    if(segment[i].end.x==segment[i+1].start.x):
-                        print("under")
-                        segment[i].start=Point(b,50)
+            if(i<len(segment) and segment[i+1].start!=None and segment[i].end.x==segment[i+1].start.x or i!=0 and segment[i-1].end!=None and segment[i].end.x==segment[i-1].end.x or i<len(segment) and segment[i+1].end!=None and segment[i].end.x==segment[i+1].end.x):
+                print(segment[i].start.y)
+                if(segment[i].end.y-segment[i].start.y>0):
+                    if(a>0):
+                        print("1j")
+                        segment[i].start=Point(0,b)
+                    elif(a==0):
+                        if(segment[i].end.x==segment[i+1].start.x):
+                            print("under2")
+                            segment[i].start=Point(b,50)
+                        else:
+                            print("upper2")
+                            segment[i].start=Point(b,0)
+                    elif(segment[i-1].end!=None and segment[i].start.x==segment[i-1].start.x):
+                        print("ok")
                     else:
-                        print("upper")
-                        segment[i].start=Point(b,0)
-                elif(segment[i-1].end!=None and segment[i].start.x==segment[i-1].start.x):
-                    print("ok")
+                        print("2j")
+                        segment[i].start=Point(50,a*50+b)
                 else:
-                    print("2j")
-                    segment[i].start=Point(50,a*50+b)
+                    if(a>0):
+                        print("1x")
+                        segment[i].start=Point(50,a*50+b)
+                    elif(a==0):
+                        if(segment[i].end.x==segment[i+1].start.x):
+                            print("under3")
+                            segment[i].start=Point(b,50)
+                        else:
+                            print("upper3")
+                            segment[i].start=Point(b,0)
+                    elif(segment[i-1].end!=None and segment[i].start.x==segment[i-1].start.x):
+                        print("ok")
+                    else:
+                        print("2x")
+                        segment[i].start=Point(0,b)
+
+                    
             else:
                 if(a>0):
                     print("3j")
@@ -144,6 +175,7 @@ def Voronoi(points):
 
 #TODO ADD the Circle event and the return of segment
 def site_events(point,Binary_Tree,segment):
+    print(point.x,point.y)
     if(Binary_Tree.sleft==None and Binary_Tree.sright==None):
         #When we create a node we need also to a child node
         Binary_Tree.sleft=point
@@ -152,10 +184,13 @@ def site_events(point,Binary_Tree,segment):
         return None
     elif(Binary_Tree.sleft!=None and Binary_Tree.sright==None):
         print("sleft")
-        s1,s2=intersection(Binary_Tree.sleft,point,float(point.y-0.00001))
+        s1,s2=intersection(Binary_Tree.sleft,point,float(point.y-0.001))
+        print(s1,s2)
         #in case of one intersection
-        if(s2==None):
+        if(s2==None and s1!=None):
+            print("foud one")
             if(Binary_Tree.sleft.x>point.x):
+                print("permutation")
                 #We need to switch points 
                 Binary_Tree.sright=Binary_Tree.sleft
                 Binary_Tree.sleft=point
@@ -173,6 +208,8 @@ def site_events(point,Binary_Tree,segment):
             Tree=copy.deepcopy(Binary_Tree)
             segment.append(Segment(s1,Tree))
             return detect_circle_event(Binary_Tree,Binary_Tree.sleft)
+        elif(s1==None):
+            return None
         else:
             #modifier
             if(Binary_Tree.sleft.y==point.y):
@@ -210,8 +247,8 @@ def site_events(point,Binary_Tree,segment):
             return detect_circle_event(Binary_Tree,Binary_Tree.sleft,Binary_Tree.sleft)
     elif(Binary_Tree.sleft==None and Binary_Tree.sright!=None):
         print('right')
-        s1,s2=intersection(Binary_Tree.sright,point,float(point.y-0.00001))
-        if(s2==None):
+        s1,s2=intersection(Binary_Tree.sright,point,float(point.y-0.001))
+        if(s2==None and s1!=None):
             if(Binary_Tree.sright.x<point.x):
                 Binary_Tree.sleft=Binary_Tree.sright
                 Binary_Tree.sright=point
@@ -228,6 +265,8 @@ def site_events(point,Binary_Tree,segment):
             print("detect circle")
             list_c=detect_circle_event(Binary_Tree,None,Binary_Tree.sright)
             return list_c 
+        elif(s1==None):
+            return None
         else:
              #modifier
             if(Binary_Tree.sright.y==point.y):
@@ -273,14 +312,14 @@ def site_events(point,Binary_Tree,segment):
         else:
             print("arcmiddle")
             #peut être réduire l?
-            s1,s2=intersection(Binary_Tree.sright,point,float(point.y-0.00001))
-            s3,s4=intersection(Binary_Tree.sleft,point,float(point.y-0.00001))
-            s5,s6=intersection(Binary_Tree.sleft,Binary_Tree.sright,float(point.y-0.00001))
+            s1,s2=intersection(Binary_Tree.sright,point,float(point.y-0.001))
+            s3,s4=intersection(Binary_Tree.sleft,point,float(point.y-0.001))
+            s5,s6=intersection(Binary_Tree.sleft,Binary_Tree.sright,float(point.y-0.001))
             old_point=None
             #worst case possible : we have a point between 2 other points an need to modify the decision tree
             #if the new point intersect the 2 sites
             #ATTENTION CEUX CAS PEU ETRE FAUX CAR UN NOUVEAU POINT NE PEUX CROISER DEUX DES LE DEBUT
-            if(s2==None and s4==None):
+            if(s2==None and s4==None and s1!=None and s3!=None):
                 print("s2 and s4 not None")
                 #if one of the 2 sites is in the extreme we just have to push it
                 if(Binary_Tree.arcright!=None and Binary_Tree.arcright.sright==None):
@@ -337,7 +376,8 @@ def site_events(point,Binary_Tree,segment):
                     segment.append(Segment(s5,arcleft))
                     list_c=detect_circle_event(Binary_Tree,Binary_Tree.sleft,old_point,point)
                 return list_c
-            elif(s1!=None):
+            elif(s1!=None and s2!=None):
+                print("s1!=s2")
                 #if the point intersect only one site
                 arcleft=Binary_Tree.arcleft
                 Binary_Tree.sleft=point
@@ -353,7 +393,8 @@ def site_events(point,Binary_Tree,segment):
                 segment.append(Segment(s1,Tree.arcleft))
                 segment.append(Segment(s2,Tree))
                 return detect_circle_event(Binary_Tree,None,Binary_Tree.sright)
-            elif(s3!=None):
+            elif(s3!=None and s4!=None):
+                print("s3!=s4")
                 arcright=Binary_Tree.arcright
                 Binary_Tree.sright=point
                 Binary_Tree.arcright=Arc(point,Binary_Tree.sleft,parent=Binary_Tree)
@@ -374,45 +415,59 @@ def site_events(point,Binary_Tree,segment):
 
 
 def intersection(p0,p1,l):
+    x1=complex(0.0)
+    x2=0.0
+    a0=0.0
+    b0=0.0
+    c0=0.0
+    a1=0.0
+    b1=0.0
+    c1=0.0
+    a=0.0
+    b=0.0
+    c=0.0
     if(p0.y==p1.y):
-        p0.y-=0.05
-        print(p0.y)
+        #p0.y-=0.05
+        b0=(-2)*p0.x*0.5*1/(p0.y-l)
+        c0=((p0.x**2)+(p0.y**2)-(l**2))*0.5*1/(p0.y-l)
+        b1=(-2)*p1.x*0.5*1/(p1.y-l)
+        c1=((p1.x**2)+(p1.y**2)-(l**2))*0.5*1/(p1.y-l)
+        b=b1-b0
+        c=c1-c0 
+        x1=-c/b
+        y1=b1*x1+c1
+        print("y==y")
+        print(x1,y1)
+        return Point(x1,y1), None
     #use quadratic formula
     #https://math.stackexchange.com/questions/2700033/explanation-of-method-for-finding-the-intersection-of-two-parabolas
     #https://math.stackexchange.com/questions/1370231/parabola-equation-in-fortune-algorithm-for-building-voronoi-diagram
     # we just have to compute a b and c which are the value of the parabola ax²+bx+c and use them in the formula
     #a0,b0 and c0 are the parameters of the parabola for the point p0 (look at the lessons)
-    a0=0.5*1/(p0.y-l)
-    b0=(-2)*p0.x*0.5*1/(p0.y-l)
-    c0=((p0.x**2)+(p0.y**2)-(l**2))*0.5*1/(p0.y-l)
-    a1=1/(2*(p1.y-l))
-    b1=(-2)*p1.x*0.5*1/(p1.y-l)
-    c1=((p1.x**2)+(p1.y**2)-(l**2))*0.5*1/(p1.y-l)
-    a=a1-a0
-    b=b1-b0
-    c=c1-c0
-   
-    #compute the 2 possibl intersections
-    x1=((-1*b)-((b**2)-4*a*c)**0.5)/(2*a)
-    x2=((-1*b)+((b**2)-4*a*c)**0.5)/(2*a)
-    print("x1,x2")
-    print(x1,x2)
-    if(type(x1)==complex):
-        x1=cmath.sqrt((x1.real)**2+(x1.imag)**2)
-        x1=x1.real
-        x2=cmath.sqrt((x2.real)**2+(x2.imag)**2)
-        x2=x2.real
+    while(type(x1)==complex):
+        a0=0.5*1/(p0.y-l)
+        b0=(-2)*p0.x*0.5*1/(p0.y-l)
+        c0=((p0.x**2)+(p0.y**2)-(l**2))*0.5*1/(p0.y-l)
+        a1=0.5*1/((p1.y-l))
+        b1=(-2)*p1.x*0.5*1/(p1.y-l)
+        c1=((p1.x**2)+(p1.y**2)-(l**2))*0.5*1/(p1.y-l)
+        a=a1-a0
+        b=b1-b0
+        c=c1-c0  
+        #compute the 2 possibl intersections
+        x1=((-1*b)-((b**2)-4*a*c)**0.5)/(2*a)
+        x2=((-1*b)+((b**2)-4*a*c)**0.5)/(2*a)
+        l=l-1
     #compute the y intersection
     #The thing is that it's not possible for x1 and x2 to be equal but they would be very close for example :29.9797595392213 30.020256460778693
-    if(x1-x2>1.0 or x2-x1>1.0):
+    print(x1,x2,l)
+    if(x1-x2>3.0 or x2-x1>3.0):
         y1=a1*x1**2+b1*x1+c1
         y2=a1*x2**2+b1*x2+c1
-        print(y1,y2)
         # if i have 2 intersection between 2 points it means that i have a circle event
         return Point(x1,y1),Point(x2,y2)
     else:
         y1=a1*x1**2+b1*x1+c1
-        print(y1)
         return Point(x1,y1), None
 
 
@@ -420,17 +475,31 @@ def intersection(p0,p1,l):
 def compute_circle(p1,p2,p3,arc):
     #the formula:http://www.ambrsoft.com/trigocalc/circle3d.htm
     #compute the center of the circle
-    A=(2*(p1.x*(p2.y-p3.y)-p1.y*(p2.x-p3.x)+p2.x*p3.y-p3.x*p2.y))
+    def myFunc(e):
+        return e.x
+    list_point=[p1,p2,p3]
+    list_point.sort(key=myFunc)
+    p1=list_point[0]
+    p2=list_point[1]
+    p3=list_point[2]
+    A=(p1.x*(p2.y-p3.y)-p1.y*(p2.x-p3.x)+p2.x*p3.y-p3.x*p2.y)
     B=((p1.x**2+p1.y**2)*(p3.y-p2.y)+(p2.x**2+p2.y**2)*(p1.y-p3.y)+(p3.x**2+p3.y**2)*(p2.y-p1.y))
     C=((p1.x**2+p1.y**2)*(p2.x-p3.x)+(p2.x**2+p2.y**2)*(p3.x-p1.x)+(p3.x**2+p3.y**2)*(p1.x-p2.x))
     D=((p1.x**2+p1.y**2)*(p3.x*p2.y-p3.y*p2.x)+(p2.x**2+p2.y**2)*(p1.x*p3.y-p1.y*p3.x)+(p3.x**2+p3.y**2)*(p2.x*p1.y-p1.x*p2.y))
+    print(A)
+    print(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y)
     if(A!=0):
         print("found something")
-        x=-(B/A)
-        y=-(C/A)
+        x=-(B/(2*A))
+        y=-(C/(2*A))
         #compute the radius of the circle
-        r=((B**2+C**2-4*A*D)/(2*A**2))**0.5
-        c1=Sites(x,y-r,"circle",arc)
+        r=((B**2+C**2-4*A*D)/(4*A**2))**0.5
+        print(A,B,C,D,x,y,r)
+        if(type(r)==complex):
+            print("CERCLE COMPLEXE")
+            #return None
+        print(arc)
+        c1=Sites(x,y-r,"circle",arc,r)
         return [c1]
     else:
         return None
@@ -463,9 +532,6 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
         else:
             print('compute circle')
             #if we found out that there is also an intersection on the left side it means that there is a circle event
-            print(arc2.sleft.x)
-            print(arc1.sright.x)
-            print(arc2.sright.x)
             return compute_circle(arc1.sleft,arc1.sright,arc2.sleft,[arc1,arc2])
     elif(pleft==None and pright!=None and pmiddle==None):
         print('pright')
@@ -475,6 +541,7 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
         Tree=Binary_Tree
         arc1=None
         arc2=None
+        print(Tree.parent.sleft.x,Tree.parent.sright.x)
         while(a==False):
             #We check the children if there is an intersection
             if(Tree.arcleft!=None and Tree.arcleft.sleft!=None):
@@ -487,20 +554,27 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
                 arc1=Tree
                 arc2=Tree.parent
                 a=True
+            elif(Tree.parent!=None and Tree.parent.sright==Tree.sleft):
+                #pas sur
+                print("parent2")
+                arc1=Tree.parent
+                arc2=Tree
+                a=True
             else:
                 a=True
         if(arc1==None):
             print("Nothing found")
             return None
         else:
-            print(arc1,arc2)
             #if we found out that there is also an intersection on the left side it means that there is a circle event
             return compute_circle(arc1.sleft,arc1.sright,arc2.sright,[arc1,arc2])
     #Not sure if it usefull
     elif(pleft!=None and pright!=None):
+        print("pmiddle")
         #In the case where the new point has an intersection with 2 points we need to check for the left and right point
         c1=None
         c2=None
+        print(Binary_Tree.sleft.x,Binary_Tree.sright.x)
         if(Binary_Tree.arcleft!=None):
             c1=detect_circle_event(Binary_Tree.arcleft,pleft)
         if(Binary_Tree.arcright!=None):
@@ -512,7 +586,6 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
         if(c2!=None):
             print("c2")
             list_c.append(c2[0])
-        print(list_c)
         return list_c
 def circle_events(point,segments,Binary_Tree):
     arcs=point.arc
@@ -535,13 +608,14 @@ def circle_events(point,segments,Binary_Tree):
     a=False
     Tree=copy.deepcopy(Binary_Tree)
     new_arc=None
+    print(arc.sleft.x,arc2.sleft.x,Tree.sleft.x,Tree.sright.x)
     while(a==False):
-        if(arc.sright.x<Tree.sleft.x):
+        if(Tree!=None and Tree.sleft!=None and arc.sright!=None and  arc.sright.x<Tree.sleft.x):
             print("sleft")
-            Tree=Tree.sleft
-        elif(arc.sleft.x>Tree.sright.x):
+            Tree=Tree.arcleft
+        elif(Tree!=None and Tree.sright!=None and arc.sleft!=None and arc.sleft.x>Tree.sright.x):
             print("sright")
-            Tree=Tree.sright
+            Tree=Tree.arcright
         else:
             Tree_parent=Tree.parent
             arcleft=None
@@ -550,7 +624,7 @@ def circle_events(point,segments,Binary_Tree):
                 arcright=Tree.arcright
             else:
                 arcleft=Tree.arcleft 
-            #<p1,p2>--><p2,p3>
+            # <p1,p2>--><p2,p3>
             if(arcright!=None and Tree.sleft!=arcright.sright):
                 Tree.sright=arcright.sright
                 Tree.arcright=arcright.arcright
@@ -581,7 +655,17 @@ def circle_events(point,segments,Binary_Tree):
                     Tree.arcright.parent=Tree.arcleft
                     new_arc=Tree.arcleft
                     a=True
-    segments.append(Segment(Point(point.x,point.y),new_arc))
+    print("modification point")
+    for seg in segments:
+        #We need to modify the end point for the other segments since they were based on the the circle
+        if(seg.start!=None and seg.start.x==point.x and seg.start.y==point.y):
+            seg.start.y=point.y+point.r
+            print(seg.start.y)
+        if(seg.end!=None and seg.end.x==point.x and seg.end.y==point.y):
+            seg.end.y=point.y+point.r
+            print(seg.end.y)
+    #TODO check this peu être ne doit on pas toujours ajouter 
+    segments.append(Segment(Point(point.x,point.y+point.r),new_arc))
     while(Tree.parent!=None):
         Tree=Tree.parent
     return Tree
@@ -594,10 +678,14 @@ def circle_events(point,segments,Binary_Tree):
 # p2=Sites(20.0,40.0,"site")
 # p3=Sites(30.0,20.0,"site")
 # p4=Sites(40.0,39.0,"site")
+# p1=Sites(35.0,20.0,"site")
+# p2=Sites(20.0,30.0,"site")
+# p3=Sites(45.0,20.0,"site")
+# p4=Sites(40.0,39.0,"site")
 p1=Sites(10.0,20.0,"site")
 p2=Sites(20.0,10.0,"site")
-p3=Sites(40.0,20.0,"site")
-p4=Sites(40.0,39.0,"site")
+p3=Sites(30.0,20.0,"site")
+# p4=Sites(40.0,39.0,"site")
 points=[p1,p2,p3]
 Voronoi(points)
 
