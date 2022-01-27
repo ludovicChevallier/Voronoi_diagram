@@ -7,16 +7,13 @@ import cmath
 import copy
 import operator
 
-nb_intersection=0
+list_previous_circle=[]
+list_delete_circle=[]
 #All the points will already be of class points with events ="sites"
 def Voronoi(points):
     #sort the points descending by y coordinates
     segment=[]
     Binary_Tree=Arc()
-    def myFunc(e):
-        return e.y
-    def myFunc2(e):
-        return e.x
     list_point=[]
     list_old_circle=[]
     points.sort(key=operator.attrgetter('y','x'),reverse=True)
@@ -43,29 +40,13 @@ def Voronoi(points):
                     list_y.append(points[i].y)
                 for i in range(len(list_circle)):
                     index=0
-                    # if(len(points)!=0):
-                    #     for j in range(len(points)):
-                    #         if(list_circle[i].y>points[j].y):
-                    #             print("found one ")
-                    #             index=j
-                    #             print(index)
-                    #         #if(points[j].event=="circle" and points[j])
-                    #     if(index!=0):
-                    #         points.insert(index-1,list_circle[i])
-                    #     else:
-                    #         #PAS SUR
-                    #         point=points[0]
-                    #         points[0]=list_circle[i]
-                    #         points.insert(0,point)
-                    # else:
-                    #     for i in range(len(list_circle)):
-                    #         points.append(list_circle[i])
                     if(list_circle[i].x not in list_x and list_circle[i].y not in list_y):
                         print("ADD CIRCLE EVENT")
                         print(list_circle[i].arc[0].sleft.x,list_circle[i].arc[0].sright.x,list_circle[i].arc[1].sleft.x,list_circle[i].arc[1].sright.x)
                         points.append(list_circle[i])
                 points.sort(key=operator.attrgetter('y','x'),reverse=True)
-                points=delete_circle_event(Binary_Tree,points)
+                #TODO check if the circle events that would be deleted was not already done
+                points=delete_circle_event(Binary_Tree,points,segment)
 
         else:
             print("circle point")
@@ -74,7 +55,7 @@ def Voronoi(points):
             list_old_circle.append(point)
             #TODO think when we add a circle event check to delete circle event with a bigger y linked to 2 of the 3 points 
             print("CIRCLE EVENT")
-            points=delete_circle_event(Binary_Tree,points)
+            points=delete_circle_event(Binary_Tree,points,segment)
             # #TODO when finishing a circle event check for other circle event in the tree
             list_circle=detect_circle_event(Binary_Tree,Binary_Tree.sleft,Binary_Tree.sright)
             print("add circle event")
@@ -82,17 +63,32 @@ def Voronoi(points):
             if(list_circle!=None):
                 list_x=[]
                 list_y=[]
+                global list_previous_circle
                 for i in range(len(list_old_circle)):
                     list_x.append(list_old_circle[i].x)
                     list_y.append(list_old_circle[i].y)
                 for i in range(len(points)):
                     list_x.append(points[i].x)
                     list_y.append(points[i].y)
+                list_x2=[]
+                list_y2=[]
+                for circle in list_previous_circle:
+                    #list_x2.append([circle.arcleft.sleft.x,circle.arcleft.sright.x,circle.arcright.sleft.x,circle.arcright.sright.x])
+                    list_x2.append(circle.x)
+                    list_y2.append(circle.y)
                 for i in range(len(list_circle)):
                     if(point.x not in list_x and point.y not in list_y):
                         print("ADD CIRCLE EVENT")
                         print(list_circle[i].arc[0].sleft.x,list_circle[i].arc[0].sright.x,list_circle[i].arc[1].sright.x)
                         points.append(list_circle[i])
+                    test=check_double_circle_event(list_previous_circle,list_circle[i])
+                    if(list_circle[i].x not in list_x2 and list_circle[i].y not in list_y2 and test!=False):
+                        print("SHOULD HAVE BEEN ADD CIRCLE EVENT")
+                        print(list_circle[i].arc[0].sleft.x,list_circle[i].arc[0].sright.x,list_circle[i].arc[1].sright.x)
+                        print(list_circle[i].x,list_circle[i].y)
+                        print(list_x2,list_y2)
+                        points.append(list_circle[i])
+
                 points.sort(key=operator.attrgetter('y','x'),reverse=True)
     #We need to close the segments
     list_seg_x=[]
@@ -163,12 +159,16 @@ def Voronoi(points):
                 segment[i].start=Point(50,a*50+b)
         else:
             seg=None
+            seg2=None
             j=1
             #If all the segment doesn't have an end it means that all of them are independent
             for j in range(len(segment)):
                 if(j!=i and segment[j].start!=None and segment[i].end.x==segment[j].start.x and segment[i].end.y==segment[j].start.y):
                     seg=segment[j]
-            if(i<len(segment)-1 and segment[i+1].start!=None and segment[i].end.x==segment[i+1].start.x or i!=0 and segment[i-1].end!=None and segment[i].end.x==segment[i-1].end.x or i<len(segment) and segment[i+1].end!=None and segment[i].end.x==segment[i+1].end.x):
+                if(j!=i and segment[j].end!=None and segment[i].start.x==segment[j].end.x and segment[i].start.y==segment[j].end.y ):
+                    seg2=segment[j]
+            print(seg,seg2)
+            if(seg==None and i<len(segment)-1 and segment[i+1].start!=None and segment[i].end.x==segment[i+1].start.x or seg==None and i!=0 and segment[i-1].end!=None and segment[i].end.x==segment[i-1].end.x or i<len(segment) and segment[i+1].end!=None and segment[i].end.x==segment[i+1].end.x ):
                 if(segment[i-1].end!=None and i<len(segment)-1 and segment[i].end.x==segment[i+1].start.x and i!=0 and segment[i].start.x==segment[i-1].end.x and segment[i-1].end.x!=segment[i+1].start.x or i<len(segment)-1 and segment[i+1].end!=None and i<len(segment)-1 and segment[i].end.x==segment[i+1].end.x and i!=0 and segment[i].start.x==segment[i-1].start.x):
                     print("continue")
                 elif(segment[i-1].end!=None and i<len(segment)-1 and segment[i].end.x==segment[i+1].start.x and i!=0 and segment[i].start.x==segment[i-1].start.x ):
@@ -212,12 +212,18 @@ def Voronoi(points):
                         if(segment[i-1].end!=None and segment[i].end.x==segment[i-1].end.x and segment[i-1].end.y-segment[i-1].start.y>0 and s2.x<s1.x):
                            b=s2.x
                         segment[i].start=Point(0,b)
-            elif(seg!=None):
+            elif(seg!=None and seg2==None):
                 print("seg!=None")
-                if(a>0):
+                if(a<0 and segment[i].start.y-segment[i].end.y<0):
                     segment[i].start=Point(50,a*50+b) 
-                if(a<0):
-                    segment[i].start=Point(0,b)     
+                if(a>0 ):
+                    segment[i].start=Point(50,a*50+b) 
+                if(a<0 and segment[i].start.y-segment[i].end.y>0):
+                    segment[i].start=Point(0,b) 
+                if(a==0):
+                        segment[i].start=Point(b,50)
+            elif(seg!=None and seg2!=None):
+                print("continue4")
             else:
                 if(a>0):
                     print("3j")
@@ -246,8 +252,39 @@ def Voronoi(points):
 
         
     
+def check_double_circle_event(list_previous_circle, circle_event):
+    print('CHECK DOUBLE CIRCLE')
+    # a circle event should not been added if the 3 points were involved in 2 previous circle event and that their center is below the actual one example 15 30 40 canno't been added because we had 15 20 30 and 20 30 40
+    circle_event_point=list(set([circle_event.arc[0].sleft.x,circle_event.arc[0].sright.x,circle_event.arc[1].sleft.x,circle_event.arc[1].sright.x]))
+    print(circle_event_point)
+    actual_circle_event_point=[]
+    for circle in list_previous_circle:
+        circle_point=list(set([circle.arc[0].sleft.x,circle.arc[0].sright.x,circle.arc[1].sleft.x,circle.arc[1].sright.x]))
+        actual_circle_event_point.append(circle_point)
+    print(actual_circle_event_point)
+    j=0
+    count=0
+    list_y=[]
+    i=0
+    for circle in actual_circle_event_point:
+        j=0
+        if(circle_event_point[0] in circle):
+            j+=1
+        if(circle_event_point[1] in circle):
+            j+=1
+        if(circle_event_point[2] in circle):
+            j+=1
+        if(j==2):
+            count+=1
+            list_y.append(list_previous_circle[i].y+list_previous_circle[i].r)
 
-def delete_circle_event(Binary_Tree,points):
+    if(count==2 and circle_event.y+circle_event.r>list_y[0] and circle_event.y+circle_event.r>list_y[1]):
+        return False
+    else:
+        return True
+def delete_circle_event(Binary_Tree,points,segments):
+    global list_previous_circle
+    global list_delete_circle
     index=[]
     for point in points:
         if(point.event=="circle"):
@@ -268,17 +305,19 @@ def delete_circle_event(Binary_Tree,points):
     for i in index:
         print("-------")
         print("delete circle event")
-        print(points[i].arc[0].sleft.x,points[i].arc[0].sright.x,points[i].arc[1].sright.x)
+        print(points[i].arc[0].sleft.x,points[i].arc[0].sright.x,points[i].arc[1].sleft.x,points[i].arc[1].sright.x)
         print(Binary_Tree.sleft.x,Binary_Tree.sright.x)
         print("-------")
+        if(points[i] not in list_previous_circle):
+            list_delete_circle.append(points[i])
         del points[i]
     return points
     
 
 def look_Binary_Tree(Binary_Tree,point):
-    print(Binary_Tree.sleft.x,Binary_Tree.sright.x)
+    #print(Binary_Tree.sleft.x,Binary_Tree.sright.x)
     test=False
-    if(point.sleft.x==Binary_Tree.sleft.x and point.sright.x==Binary_Tree.sright.x):
+    if(Binary_Tree.sleft!=None and Binary_Tree.sright!=None and point.sleft.x==Binary_Tree.sleft.x and point.sright.x==Binary_Tree.sright.x):
         return True
     if(Binary_Tree.arcright!=None and Binary_Tree.arcright.sright!=None):
         test=look_Binary_Tree(Binary_Tree.arcright,point)
@@ -289,33 +328,7 @@ def look_Binary_Tree(Binary_Tree,point):
     
     
 
-def check_circle_event(points,circle_event):
-    print("CHECK CIRCLE")
-    #CHECK delete 20 30 40 alors qu'il est déjà passé
-    #vérifier quand on add les circle event qu'on les a pas déjà
-    index=[]
-    for point in points:
-        j=0
-        arcs=point.arc
-        arc=[circle_event.arc[0].sleft.x,circle_event.arc[0].sright.x,circle_event.arc[1].sleft.x,circle_event.arc[1].sright.x]
-        print(arc)
-        #print(point.arc[0].sleft.x,point.arc[0].sright.x,point.arc[1].sleft.x,point.arc[1].sright.x)
-        if(point.arc!=None and point.arc[0].sleft.x in arc):
-            j+=1
-        if(point.arc!=None and point.arc[0].sright.x in arc):
-            j+=1
-        if(point.arc!=None and point.arc[1].sright.x in arc):
-            j+=1
-        if(point.event!="site" and j==2):
-            index.append(points.index(point))
-    for i in index:
-        print(point.arc[0].sleft.x,point.arc[0].sright.x,point.arc[1].sright.x)
-        print(point.y,circle_event.y)
-        print("-------")
-        print("delete circle event")
-        print("-------")
-        del points[i]
-    return points
+
 #TODO ADD the Circle event and the return of segment
 def site_events(point,Binary_Tree,segment):
     print("points")
@@ -458,8 +471,6 @@ def site_events(point,Binary_Tree,segment):
             s1,s2=intersection(Binary_Tree.sright,point,float(point.y-0.001))
             s3,s4=intersection(Binary_Tree.sleft,point,float(point.y-0.001))
             s5,s6=intersection(Binary_Tree.sleft,Binary_Tree.sright,float(point.y-0.001))
-            global nb_intersection
-            nb_intersection-=1
             old_point=None
             #worst case possible : we have a point between 2 other points an need to modify the decision tree
             #if the new point intersect the 2 sites
@@ -565,8 +576,6 @@ def site_events(point,Binary_Tree,segment):
 
 
 def intersection(p0,p1,l):
-    global nb_intersection
-    nb_intersection += 1
     x1=complex(0.0)
     x2=0.0
     a0=0.0
@@ -639,12 +648,11 @@ def compute_circle(p1,p2,p3,arc):
     C=((p1.x**2+p1.y**2)*(p2.x-p3.x)+(p2.x**2+p2.y**2)*(p3.x-p1.x)+(p3.x**2+p3.y**2)*(p1.x-p2.x))
     D=((p1.x**2+p1.y**2)*(p3.x*p2.y-p3.y*p2.x)+(p2.x**2+p2.y**2)*(p1.x*p3.y-p1.y*p3.x)+(p3.x**2+p3.y**2)*(p2.x*p1.y-p1.x*p2.y))
     if(A!=0):
-        global nb_intersection
-        nb_intersection+=1
         print("found something")
         print(p1.x,p2.x,p3.x)
         x=-(B/(2*A))
         y=-(C/(2*A))
+        print(x,y)
         #compute the radius of the circle
         r=((B**2+C**2-4*A*D)/(4*A**2))**0.5
         if(type(r)==complex):
@@ -747,6 +755,17 @@ def detect_circle_event(Binary_Tree,pleft=None,pright=None,pmiddle=None):
         return list_c
 def circle_events(point,segments,Binary_Tree):
     print("CIRCLE EVENT DONE")
+    global list_previous_circle
+    global list_delete_circle
+    list_x=[]
+    list_y=[]
+    list_del_x=[]
+    list_del_y=[]
+    for circle in list_previous_circle:
+        list_x.append(circle.x)
+        list_y.append(circle.y+circle.r)
+    for circle in list_delete_circle:
+        list_del_x.append(list(set([circle.arc[0].sleft.x,circle.arc[0].sright.x,circle.arc[1].sleft.x,circle.arc[1].sright.x])))
     arcs=point.arc
     print(arcs[0].sleft.x,arcs[0].sright.x,arcs[1].sleft.x,arcs[1].sright.x)
     #First we finish the segment that are linked to this circle events
@@ -762,9 +781,25 @@ def circle_events(point,segments,Binary_Tree):
             for segment in segments:
                 #TODO ajouter le end seulement si le segment ne vient pas d'être crée
                 if(segment.arc.sleft.x==arc.sleft.x and segment.arc.sright.x==arc.sright.x):
-                    print("end segment")
-                    #ajout du point.r
-                    segment.end=Point(point.x,point.y+point.r)
+                    test=False
+                    for circle in list_del_x:
+                        if(segment.arc.sleft.x in circle and segment.arc.sright.x in circle ):
+                            test=True
+                            break
+                    print("END SEGMENT")
+                    if(segment.end!=None and segment.end.x in list_x and segment.end.y in list_y and test==False):
+                        if(segment.end!=None):
+                            print(segment.arc.sleft.x,segment.arc.sright.x)
+                            print(segment.end.x,segment.end.y)
+                            print(list_x,list_y)
+                            print(list_del_x,list_del_y)
+                        #if the end point has been fixed by a circle event we modify the start point.
+                        segment.start=Point(point.x,point.y+point.r)
+                    else:
+                        print(segment.arc.sleft.x,segment.arc.sright.x)
+                        print(segment.start.x,segment.start.y)
+                        segment.end=Point(point.x,point.y+point.r)
+                        print(segment.end.x,segment.end.y)
     else:
         #if the last segment have the same start we have to update this start and the segment just before we have to put an end (this is for the case s2 and s4 none)
         position=len(segments)
@@ -803,10 +838,10 @@ def circle_events(point,segments,Binary_Tree):
             arcleft=None
             arcright=None
             #modifer sright!=None and ....
-            if(Tree.arcright.sright!=None and arc2.sright.x==Tree.arcright.sright.x and arc2.sright.y==Tree.arcright.sright.y):
+            if(Tree.arcright!=None and Tree.arcright.sright!=None and arc2.sright.x==Tree.arcright.sright.x and arc2.sright.y==Tree.arcright.sright.y):
                 print("arcright")
                 arcright=Tree.arcright
-            elif(Tree.arcleft.sleft!=None and arc2.sleft.x==Tree.arcleft.sleft.x and arc2.sleft.y==Tree.arcleft.sleft.y):
+            elif(Tree.arcleft!=None and Tree.arcleft.sleft!=None and arc2.sleft.x==Tree.arcleft.sleft.x and arc2.sleft.y==Tree.arcleft.sleft.y):
                 print("arcleft")
                 arcleft=Tree.arcleft 
             else:
@@ -816,6 +851,7 @@ def circle_events(point,segments,Binary_Tree):
                 print("cas1")
                 #It's not laways the case we want to delete the point in case the point in the middle is under the 2 other point we don't delete it
                 if(Tree.sright.y>Tree.sleft.y):
+                    print("delete")
                     Tree.sright=arcright.sright
                     Tree.arcright=arcright.arcright
                     Tree.arcright.parent=Tree
@@ -824,14 +860,21 @@ def circle_events(point,segments,Binary_Tree):
                     Tree2=copy.deepcopy(Tree)
                     Tree2.sright=arcright.sright
                     new_arc=Tree2
-
                 a=True
             elif(arcleft!=None and Tree.sright!=arcleft.sleft):
                 print("cas2")
-                Tree.sleft=arcleft.sleft
-                Tree.arcleft=arcleft.arcleft
-                Tree.arcleft.parent=Tree
-                new_arc=Tree
+                print(Tree.sleft.x,Tree.sright.x)
+                if(Tree.sleft.y>Tree.sright.y):
+                    print("modif")
+                    Tree.sleft=arcleft.sleft
+                    Tree.arcleft=arcleft.arcleft
+                    Tree.arcleft.parent=Tree
+                    new_arc=Tree
+                else:
+                    Tree2=copy.deepcopy(Tree)
+                    Tree2.sleft=arcleft.sleft
+                    new_arc=Tree2
+
                 a=True
             else:
                 #In the case of the point intersecting an other one we techniqually have two circle event one for each intersection so we have to check if delete the left arc or right arc
@@ -883,8 +926,9 @@ def circle_events(point,segments,Binary_Tree):
         if(true_segment.start.x!=point.x and true_segment.start.y!=point.y+point.r):
             print("update end")
             true_segment.end=Point(point.x,point.y+point.r)
-        print("not new arcs")
+        print("NOT NEW ARCS")
         print(new_arc.sleft.x,new_arc.sright.x)
+    list_previous_circle.append(point)
     return Tree
 
 def nb_leaf(segment,new_arc,test):
@@ -894,18 +938,19 @@ def nb_leaf(segment,new_arc,test):
 #p1=Sites(30.0,45.0,"site")
 #p2=Sites(10.0,20.0,"site")
 #Need to fix y=y
-# p1=Sites(15.0,19.0,"site")
-# p2=Sites(20.0,40.0,"site")
-# p3=Sites(30.0,20.0,"site")
-# p4=Sites(40.0,39.0,"site")
+p1=Sites(15.0,20.0,"site")
+p2=Sites(20.0,10.0,"site")
+p3=Sites(30.0,20.0,"site")
+p4=Sites(40.0,39.0,"site")
 # p1=Sites(35.0,20.0,"site")
 # p2=Sites(20.0,30.0,"site")
 # p3=Sites(45.0,20.0,"site")
 # p4=Sites(40.0,39.0,"site")
-p1=Sites(10.0,20.0,"site")
-p2=Sites(20.0,30.0,"site")
-p3=Sites(30.0,20.0,"site")
-p4=Sites(40.0,39.0,"site")
+# p1=Sites(10.0,29.0,"site")
+# p2=Sites(20.0,25.0,"site")
+# p3=Sites(25.0,35.0,"site")
+# p4=Sites(30.0,40.0,"site")
+#TODO ajouter un autre if pour ajouter l'élément
 points=[p1,p2,p3,p4]
 Voronoi(points)
 
