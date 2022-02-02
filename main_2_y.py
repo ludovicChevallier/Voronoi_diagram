@@ -1,7 +1,7 @@
 import random
 import math
 import matplotlib.pyplot as plt
-from data_type2 import Point, Event, Arc, Segment, PriorityQueue
+from data_type_y import Point, Event, Arc, Segment, PriorityQueue
 
 # Source: (C++) http://www.cs.hmc.edu/~mbrubeck/voronoi.html
 
@@ -39,7 +39,7 @@ class Voronoi:
 
     def process(self):
         while not self.points.empty():
-            if not self.event.empty() and (self.event.top().x <= self.points.top().x):
+            if not self.event.empty() and (self.event.top().y <= self.points.top().y):
                 self.process_event() # handle circle event
             else:
                 self.process_point() # handle site event
@@ -68,30 +68,25 @@ class Voronoi:
 
             # remove associated arc (parabola)
             a = e.a
-            print(a.p.x)
             #What this do is that in each arc (pprev and pnext) we have the intersection p1,p2 and p2,p3 and we create p1,p3 and p3,p1
             # And for this new intersection we say that their point of start is the center of the circle 
-            print("-------")
-            print(a.s1.start.x)
             if a.pprev is not None:
-                print(a.pprev.p.x)
-                print(a.pprev.pnext.p.x)
-                print(a.pprev.pprev.p.x)
                 a.pprev.pnext = a.pnext
                 a.pprev.s1 = s
             if a.pnext is not None:
-                print(a.pnext.pprev.p.x)
                 a.pnext.pprev = a.pprev
                 a.pnext.s0 = s
-            print("finish intersection")
-            print(a.s0.start.x,a.s1.start.x)
             # finish the edges before and after a
             if a.s0 is not None: a.s0.finish(e.p)
             if a.s1 is not None: a.s1.finish(e.p)
+            print("finish segment")
+            print(a.p.x)
+            print(a.s0.end.x,a.s1.end.x)
+            print(a.s0.start.x,a.s1.start.x)
 
             # recheck circle events on either side of p
-            if a.pprev is not None: self.check_circle_event(a.pprev, e.x)
-            if a.pnext is not None: self.check_circle_event(a.pnext, e.x)
+            if a.pprev is not None: self.check_circle_event(a.pprev, e.y)
+            if a.pnext is not None: self.check_circle_event(a.pnext, e.y)
 
     def arc_insert(self, p):
         if self.arc is None:
@@ -108,8 +103,6 @@ class Voronoi:
                     # new parabola intersects arc i
                     flag, zz = self.intersect(p, i.pnext)
                     if (i.pnext is not None) and (not flag):
-                        print(i.pnext.p.x)
-                        print(i.p.x)
                         #The idea behind this is to create a circle for example : p2 has prec and pnext=p1 which means our pnext is equal (p2,p2,p1). so when we do Arc(p,i,i.next) When we are going to compute the circle event for i.pnext i.prev is going to be p3, and i.pnext=10
                         #So in the end we would have p1-->p2-->p3-->p2-->p1
                         i.pnext.pprev = Arc(i.p, i, i.pnext)
@@ -122,7 +115,6 @@ class Voronoi:
                     # add p between i and i.pnext
                     #TODO we do this because we will pi, pj,pk and pi ,pk,pj  thanks to the two next line
                     #He does this because thanks to this if we want to compute the circle event for i and point p it's possible because we will have i.pprev and i.ppnext
-                    print( i.pnext)
                     i.pnext.pprev = Arc(p, i, i.pnext)
                     #It also modify i.pnext.pprev because it become i due to Arc(p, i, i.pnext)
                     i.pnext = i.pnext.pprev
@@ -140,25 +132,25 @@ class Voronoi:
                     # add new half-edges connected to i's endpoints
                     #On lie les segment s0 et s1 de chaque côté du nouveau point
                     seg = Segment(z)
+                    print(z.x)
                     self.output.append(seg)
                     i.pprev.s1 = i.s0 = seg
-                    print(i.s0.start.x)
                     seg = Segment(z)
                     self.output.append(seg)
                     i.pnext.s0 = i.s1 = seg
 
                     # check for new circle events around the new arc
                     print("MID")
-                    self.check_circle_event(i, p.x)
+                    self.check_circle_event(i, p.y)
                     print("LEFT")
-                    self.check_circle_event(i.pprev, p.x)
+                    self.check_circle_event(i.pprev, p.y)
                     print("RIGHT")
-                    self.check_circle_event(i.pnext, p.x)
+                    self.check_circle_event(i.pnext, p.y)
 
                     return
                         
                 i = i.pnext
-            print("no intersection")
+
             # if p never intersects an arc, append it to the list
             i = self.arc
             while i.pnext is not None:
@@ -174,25 +166,25 @@ class Voronoi:
             i.s1 = i.pnext.s0 = seg
             self.output.append(seg)
 
-    def check_circle_event(self, i, x0):
+    def check_circle_event(self, i, y0):
         if(i.pprev!=None):
             print("prev: "+ str(i.pprev.p.x))
         print( i.p.x)
         if(i.pnext!=None):
              print("next: "+str(i.pnext.p.x))
         # look for a new circle event for arc i
-        if (i.e is not None) and (i.e.x  != self.x0):
+        if (i.e is not None) and (i.e.y  != self.y0):
             #If the arc is already assign to a circle event and that this circle event is not on the same x level of l (x0) it's a false alarm
             i.e.valid = False
         i.e = None
 
         if (i.pprev is None) or (i.pnext is None): return
 
-        flag, x, o = self.circle(i.pprev.p, i.p, i.pnext.p)
-        if flag and (x > self.x0):
+        flag, y, o = self.circle(i.pprev.p, i.p, i.pnext.p)
+        if flag and (y > self.y0):
             print("detect circle event")
             print(i.pprev.p.x, i.p.x, i.pnext.p.x)
-            i.e = Event(x, o, i)
+            i.e = Event(y, o, i)
             self.event.push(i.e)
 
     def circle(self, a, b, c):
@@ -220,10 +212,10 @@ class Voronoi:
         oy = 1.0 * (A*F - C*E) / G
 
         # o.x plus radius equals max x coord
-        x = ox + math.sqrt((a.x-ox)**2 + (a.y-oy)**2)
+        y = oy + math.sqrt((a.x-ox)**2 + (a.y-oy)**2)
         o = Point(ox, oy)
            
-        return True, x, o
+        return True, y, o
         
     def intersect(self, p, i):
         # check whether a new parabola at point p intersect with arc i
@@ -234,18 +226,22 @@ class Voronoi:
         b = 0.0
 
         if i.pprev is not None:
-            a = (self.intersection(i.pprev.p, i.p, 1.0*p.x)).y
+            a = (self.intersection(i.pprev.p, i.p, 1.0*p.x)).x
         if i.pnext is not None:
-            b = (self.intersection(i.p, i.pnext.p, 1.0*p.x)).y
-
-        if (((i.pprev is None) or (a <= p.y)) and ((i.pnext is None) or (p.y <= b))):
+            b = (self.intersection(i.p, i.pnext.p, 1.0*p.x)).x
+        if(a!=0.0 and b!=0.0):
+            print("intersection_prev")
+            print(i.pprev.p.x, i.p.x,i.pnext.p.x)
+            print(a,b)
+        if (((i.pprev is None) or (a >= p.x)) and ((i.pnext is None) or (p.x >= b))):
             print("intersection")
             if(a!=0.0 and b!=0.0):
                 print(i.pprev.p.x, i.p.x,i.pnext.p.x)
             print(p.y)
             print(a,b)
-            py = p.y
-            px = 1.0 * ((i.p.x)**2 + (i.p.y-py)**2 - p.x**2) / (2*i.p.x - 2*p.x)
+            px = p.x
+            py = 1.0 * ((i.p.y)**2 + (i.p.x-px)**2 - p.y**2) / (2*i.p.y - 2*p.y)
+            print(py,px)
             res = Point(px, py)
             return True, res
         return False, None
@@ -256,11 +252,9 @@ class Voronoi:
         if (p0.x == p1.x):
             py = (p0.y + p1.y) / 2.0
         elif (p1.x == l):
-            #We can't use quadratique formula
             py = p1.y
         elif (p0.x == l):
             py = p0.y
-            #We do this to not have a division by 0
             p = p1
         else:
             # use quadratic formula
@@ -308,7 +302,7 @@ p2=(45.0,21.0)
 p3=(20.0,10.0)
 p4=(30.0,20.0)
 p5=(50.0,60.0)
-points=[p1,p2,p3]
+points=[p1,p2,p3,p5]
 vp = Voronoi(points)
 vp.process()
 lines = vp.get_output()
