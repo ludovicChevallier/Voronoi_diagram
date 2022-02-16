@@ -7,8 +7,8 @@ import math
 x_min, x_max = 0.0, 20.0
 y_min, y_max = 0.0, 20.0
 
-x_pts = [2.0,3.8,5.0,7.7,8.0]
-y_pts = [2.0,8.2,5.0,2.4,7.6]
+x_pts = [2.0,3.8,5.0,7.7,8.0,3.0]
+y_pts = [2.0,8.2,5.0,2.4,7.6,3.0]
 
 plt.scatter(x_pts,y_pts, color='gray')
 
@@ -56,9 +56,9 @@ for idx in range(len(x_pts)):
 		
 			perp_line_list.append((perp_slope,perp_intercept,x_middle,y_middle))
 		
-			#y = perp_slope * x + perp_intercept
+			# y = perp_slope * x + perp_intercept
 
-			#plt.plot(x,y, color='gray', linestyle='--')
+			# plt.plot(x,y, color='gray', linestyle='--')
 
 	#----------------------------------------------------------------------------------------#
 	# Step 3: find the first voronoi segment
@@ -69,7 +69,7 @@ for idx in range(len(x_pts)):
 	slope_0 = perp_line_list[first_perp_line_idx][0]
 	intercept_0 = perp_line_list[first_perp_line_idx][1]
 
-	# y = slope_0 * x + intercept_0
+	y = slope_0 * x + intercept_0
 
 	# plt.plot(x,y, color='red', linestyle='--')
 
@@ -122,6 +122,12 @@ for idx in range(len(x_pts)):
 			intersection_list[i+1][1],
 			intersection_list[i+1][2],
 			intersection_list[i+1][3],))
+			# y = slope_0 * x + intercept_0
+
+			# plt.plot(x,y, color='green', linestyle='--')
+			# y = intersection_list[i+1][2] * x + intersection_list[i+1][3]
+
+			# plt.plot(x,y, color='green', linestyle='--')
 
 	# print('voronoi_segment_list',voronoi_segment_list)
 	# print(' ')
@@ -150,7 +156,7 @@ for idx in range(len(x_pts)):
 		
 			y = slope_0 * x + intercept_0
 
-			plt.plot(x,y, color='green', linestyle='--')
+			# plt.plot(x,y, color='blue', linestyle='--')
 
 			intersection_list = []
             #Cette partie est utilisé afin étender nos point jusqu'au bord de la map
@@ -198,7 +204,10 @@ for idx in range(len(x_pts)):
 						print('point x,y',x_pts[idx],y_pts[idx])  
 						print("a,b",a,b)                        
 						print("intersection x,y",intersection[0], intersection[1])	
-						print("voronoi a,b",voronoi_segment[4] , voronoi_segment[5])						
+						print("voronoi a,b",voronoi_segment[4] , voronoi_segment[5])
+						# y = voronoi_segment[4] * x + voronoi_segment[5]
+
+						# plt.plot(x,y, color='blue', linestyle='--')						
 						if a > 0.0 and b > 0.0: intersection_list_filtered.append(intersection)
 						if a < 0.0 and b < 0.0: intersection_list_filtered.append(intersection)
 
@@ -264,7 +273,7 @@ for idx in range(len(x_pts)):
 
 #----------------------------------------------------------------------------------------#
 
-plt.title("How to create a Voronoi diagram \n based on euclidean distance using python ?", fontsize=10)
+# plt.title("How to create a Voronoi diagram \n based on euclidean distance using python ?", fontsize=10)
 plt.xlabel('x',fontsize=8)
 plt.ylabel('y',fontsize=8)
 

@@ -122,10 +122,22 @@ class Voronoi:
                     # add p between i and i.pnext
                     #TODO we do this because we will pi, pj,pk and pi ,pk,pj  thanks to the two next line
                     #He does this because thanks to this if we want to compute the circle event for i and point p it's possible because we will have i.pprev and i.ppnext
-                    print( i.pnext)
+                    print("i.pnext.pnext")
+                    if(i.pnext.pnext !=None):
+                        print( i.pnext.pnext.p.x)
                     i.pnext.pprev = Arc(p, i, i.pnext)
                     #It also modify i.pnext.pprev because it become i due to Arc(p, i, i.pnext)
+                   
+                    if(i.pnext.pprev.pprev!=None and i.pnext.pprev.pprev.pprev!=None and i.pnext.pprev.pprev.pnext!=None ):
+                            print(i.pnext.pprev.pprev.p.x)
+                            print(i.pnext.pprev.pprev.pprev.p.x)
+                            print(i.pnext.pprev.pprev.pnext.p.x)
                     i.pnext = i.pnext.pprev
+                    print("after i.pnext")
+                    if(i.pnext.pprev!=None and i.pnext.pprev.pnext!=None and i.pnext.pprev.pprev!=None ):
+                            print(i.pnext.pprev.p.x)
+                            print(i.pnext.pprev.pprev.p.x)
+                            print(i.pnext.pprev.pnext.p.x)
                     print("ADD p")
                     print(i.p.x)
                     if(i.pprev!=None):
@@ -133,6 +145,7 @@ class Voronoi:
                     print(i.pnext.p.x)
                     print(i.pnext.pprev.p.x)
                     print(i.pnext.pnext.p.x)
+
 
 
                     i = i.pnext # now i points to the new arc

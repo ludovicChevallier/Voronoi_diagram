@@ -302,7 +302,7 @@ p2=(45.0,21.0)
 p3=(20.0,10.0)
 p4=(30.0,20.0)
 p5=(50.0,60.0)
-points=[p1,p2,p3,p5]
+points=[p1,p2,p3]
 vp = Voronoi(points)
 vp.process()
 lines = vp.get_output()
